@@ -1,7 +1,27 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
-import QRCode from 'react-native-qrcode-svg';
+import { View, Text, ScrollView, StyleSheet, Platform } from 'react-native';
 import { loadProfile } from '../storage/profileStorage';
+
+// react-native-qrcode-svg relies on react-native-svg which has limited web
+// support in Expo Router / Metro web. We use a lightweight web QR API instead.
+function QRDisplay({ data }) {
+  if (Platform.OS === 'web') {
+    const encoded = encodeURIComponent(data);
+    const src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encoded}`;
+    return (
+      <img
+        src={src}
+        alt="Emergency QR Code"
+        width={200}
+        height={200}
+        style={{ borderRadius: 8 }}
+      />
+    );
+  }
+  // Native — use the SVG library
+  const QRCode = require('react-native-qrcode-svg').default;
+  return <QRCode value={data} size={200} />;
+}
 
 export default function EmergencyScreen() {
   const [profile, setProfile] = useState(null);
@@ -22,7 +42,10 @@ export default function EmergencyScreen() {
     emergencyContacts: profile.emergencyContacts,
   });
 
-  const hasData = profile.bloodGroup || profile.drugAllergies.length > 0 || profile.conditions.length > 0;
+  const hasData =
+    profile.bloodGroup ||
+    profile.drugAllergies.length > 0 ||
+    profile.conditions.length > 0;
 
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
@@ -38,7 +61,6 @@ export default function EmergencyScreen() {
         </View>
       ) : (
         <>
-          {/* Quick-read summary */}
           <View style={styles.summaryBox}>
             {profile.name ? <Row label="Name" value={profile.name} /> : null}
             {profile.bloodGroup ? <Row label="Blood group" value={profile.bloodGroup} critical /> : null}
@@ -59,11 +81,10 @@ export default function EmergencyScreen() {
             )}
           </View>
 
-          {/* QR Code */}
           <View style={styles.qrSection}>
             <Text style={styles.qrLabel}>Scan QR for full emergency profile</Text>
             <View style={styles.qrBox}>
-              <QRCode value={emergencyData} size={200} />
+              <QRDisplay data={emergencyData} />
             </View>
             <Text style={styles.qrNote}>
               Contains only emergency-relevant data. No insurance info shared.
@@ -93,41 +114,15 @@ const styles = StyleSheet.create({
   headerIcon: { fontSize: 40, marginBottom: 8 },
   heading: { fontSize: 24, fontWeight: '700', color: '#111' },
   subheading: { fontSize: 13, color: '#6B7280', marginTop: 4 },
-  emptyBox: {
-    backgroundColor: '#FEF9C3',
-    borderRadius: 12,
-    padding: 20,
-    borderWidth: 1,
-    borderColor: '#FDE68A',
-  },
+  emptyBox: { backgroundColor: '#FEF9C3', borderRadius: 12, padding: 20, borderWidth: 1, borderColor: '#FDE68A' },
   emptyText: { color: '#92400E', fontSize: 14, textAlign: 'center' },
-  summaryBox: {
-    backgroundColor: '#fff',
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    overflow: 'hidden',
-    marginBottom: 24,
-  },
-  row: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    padding: 14,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
-    gap: 12,
-  },
+  summaryBox: { backgroundColor: '#fff', borderRadius: 14, borderWidth: 1, borderColor: '#E5E7EB', overflow: 'hidden', marginBottom: 24 },
+  row: { flexDirection: 'row', justifyContent: 'space-between', padding: 14, borderBottomWidth: 1, borderBottomColor: '#F3F4F6', gap: 12 },
   rowLabel: { fontSize: 13, color: '#6B7280', fontWeight: '600', flex: 1 },
   rowValue: { fontSize: 13, color: '#111', flex: 2, textAlign: 'right' },
   rowValueCritical: { color: '#DC2626', fontWeight: '700' },
   qrSection: { alignItems: 'center', gap: 12 },
   qrLabel: { fontSize: 14, fontWeight: '600', color: '#374151' },
-  qrBox: {
-    backgroundColor: '#fff',
-    padding: 20,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-  },
+  qrBox: { backgroundColor: '#fff', padding: 20, borderRadius: 16, borderWidth: 1, borderColor: '#E5E7EB' },
   qrNote: { fontSize: 12, color: '#9CA3AF', textAlign: 'center', paddingHorizontal: 20 },
 });

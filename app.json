@@ -1,0 +1,24 @@
+{
+  "expo": {
+    "name": "MediScan",
+    "slug": "medicine-bot",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "backgroundColor": "#6366F1"
+    },
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.medicinebot.mediscan",
+      "infoPlist": {
+        "NSCameraUsageDescription": "MediScan needs camera access to scan food labels, medicine boxes, and menus for allergens."
+      }
+    },
+    "android": {
+      "package": "com.medicinebot.mediscan",
+      "permissions": ["CAMERA"]
+    }
+  }
+}

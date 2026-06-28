@@ -1,30 +1,12 @@
-// Allergen checker — compares extracted text against user's health profile
-// Uses keyword matching + optional AI call
-
-const COMMON_ALLERGEN_KEYWORDS = {
-  peanuts: ['peanut', 'groundnut', 'arachis oil'],
-  treenuts: ['almond', 'cashew', 'walnut', 'pecan', 'pistachio', 'hazelnut', 'macadamia', 'brazil nut'],
-  milk: ['milk', 'lactose', 'whey', 'casein', 'butter', 'cream', 'cheese', 'yogurt'],
-  eggs: ['egg', 'albumin', 'ovalbumin', 'mayonnaise'],
-  wheat: ['wheat', 'gluten', 'flour', 'semolina', 'spelt', 'durum'],
-  soy: ['soy', 'soya', 'tofu', 'edamame', 'miso', 'tempeh'],
-  fish: ['fish', 'salmon', 'tuna', 'cod', 'tilapia', 'bass', 'flounder', 'anchovy'],
-  shellfish: ['shrimp', 'prawn', 'crab', 'lobster', 'shellfish', 'clam', 'oyster', 'scallop'],
-  sesame: ['sesame', 'tahini', 'til', 'gingelly'],
-  nsaids: ['ibuprofen', 'aspirin', 'naproxen', 'diclofenac', 'indomethacin'],
-  penicillin: ['penicillin', 'amoxicillin', 'ampicillin', 'amoxil'],
-  sulfa: ['sulfonamide', 'sulfamethoxazole', 'trimethoprim', 'bactrim'],
-};
+import { ALLERGEN_KEYWORDS } from '../constants';
 
 export function checkAllergens(extractedText, profile) {
   const text = extractedText.toLowerCase();
   const warnings = [];
-  const safe = [];
 
-  // Check food allergies
   for (const userAllergen of profile.foodAllergies) {
     const normalized = userAllergen.toLowerCase().trim();
-    const keywords = COMMON_ALLERGEN_KEYWORDS[normalized] || [normalized];
+    const keywords = ALLERGEN_KEYWORDS[normalized] || [normalized];
     for (const kw of keywords) {
       if (text.includes(kw)) {
         warnings.push({
@@ -39,10 +21,9 @@ export function checkAllergens(extractedText, profile) {
     }
   }
 
-  // Check drug allergies
   for (const userAllergen of profile.drugAllergies) {
     const normalized = userAllergen.toLowerCase().trim();
-    const keywords = COMMON_ALLERGEN_KEYWORDS[normalized] || [normalized];
+    const keywords = ALLERGEN_KEYWORDS[normalized] || [normalized];
     for (const kw of keywords) {
       if (text.includes(kw)) {
         warnings.push({
@@ -57,7 +38,6 @@ export function checkAllergens(extractedText, profile) {
     }
   }
 
-  // Check current medications for interactions (basic duplicate check)
   for (const med of profile.medications) {
     const normalized = med.toLowerCase().trim();
     if (text.includes(normalized)) {
@@ -82,18 +62,15 @@ export function checkAllergens(extractedText, profile) {
 }
 
 export function highlightAllergens(text, profile) {
-  // Returns array of segments: { text, isAllergen, allergenName }
   const allKeywords = [];
   for (const allergen of [...profile.foodAllergies, ...profile.drugAllergies]) {
     const normalized = allergen.toLowerCase().trim();
-    const keywords = COMMON_ALLERGEN_KEYWORDS[normalized] || [normalized];
+    const keywords = ALLERGEN_KEYWORDS[normalized] || [normalized];
     for (const kw of keywords) {
       allKeywords.push({ kw, allergen });
     }
   }
-
   if (allKeywords.length === 0) return [{ text, isAllergen: false }];
-
   const regex = new RegExp(`(${allKeywords.map((k) => k.kw).join('|')})`, 'gi');
   const parts = text.split(regex);
   return parts.map((part) => {

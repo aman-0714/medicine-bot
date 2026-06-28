@@ -219,9 +219,16 @@ function WebScanFallback({ profile }) {
 
   async function handleCheck() {
     if (!text.trim()) return;
-    if (!profile) { alert('Fill in your health profile first.'); return; }
+    // Always reload profile fresh before checking
+    const freshProfile = await loadProfile();
+    if (!freshProfile) { alert('Fill in your health profile first.'); return; }
+    const hasAllergies =
+      freshProfile.foodAllergies.length > 0 ||
+      freshProfile.drugAllergies.length > 0 ||
+      freshProfile.medications.length > 0;
+    if (!hasAllergies) { alert('Add your allergies in the Profile tab first.'); return; }
     setLoading(true);
-    const analysis = checkAllergens(text, profile);
+    const analysis = checkAllergens(text, freshProfile);
 
     // Try AI analysis via backend
     let aiAnalysis = null;
@@ -229,7 +236,7 @@ function WebScanFallback({ profile }) {
       const res = await fetch(`${API_URL}/analyse`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text, profile }),
+        body: JSON.stringify({ text, profile: freshProfile }),
       });
       if (res.ok) {
         const d = await res.json();
@@ -300,13 +307,11 @@ function WebScanFallback({ profile }) {
             <Text style={styles.disclaimerText}>Automated keyword check only — always read the label yourself.</Text>
           </View>
 
-          {result.analysis.safe ? (
-            <SafeBanner />
-          ) : (
+          {!result.analysis.safe &&
             result.analysis.warnings.map((w, i) => (
               <AlertCard key={i} severity={w.severity} message={w.message} allergen={w.allergen} />
             ))
-          )}
+          }
 
           {result.aiAnalysis && (
             <View style={styles.aiBox}>
